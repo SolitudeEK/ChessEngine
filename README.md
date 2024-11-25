@@ -15,13 +15,13 @@ This repository contains a robust chess engine designed for high-performance mov
 ---
 
 ## Code Structure
--- **AI**: Contains the implementation of the Alpha-Beta pruning algorithm.
--- **Position**: Represents the chessboard state.
--- **Move**: Defines move generation and sorting logic.
--- **TranspositionTable**: Manages cached positions for faster lookups.
--- **RepetitionHistory**: Tracks board state repetitions for draw detection.
--- **SearchInterrupter**: Provides interrupt/resume functionality for the search process.
--- **ZobristHash**: Implements hashing for board states.
+- **AI**: Contains the implementation of the Alpha-Beta pruning algorithm.
+- **Position**: Represents the chessboard state.
+- **Move**: Defines move generation and sorting logic.
+- **TranspositionTable**: Manages cached positions for faster lookups.
+- **RepetitionHistory**: Tracks board state repetitions for draw detection.
+- **SearchInterrupter**: Provides interrupt/resume functionality for the search process.
+- **ZobristHash**: Implements hashing for board states.
 
 ---
 
