@@ -144,12 +144,12 @@ namespace ChessEngine.AI
                 return new Tuple<int, bool, Move>(0, true, new Move());
 
             MoveList moves = LegalMoveGen.Generate(position, Side.Black);
-            moves = MoveSorter.Sort(position.Pieces, moves);
+            moves = MoveSorter.SortOptimized(position.Pieces, moves);
             Move bestMove = null;
             byte bestMoveIndex = 0;
             bool gameWasFinishedOnBestMove = false;
 
-            byte tableResult = TranspositionTable.Instance.GetBestMoveIndex(position.Hash);
+            byte tableResult = TranspositionTable.Instance.GetBestMoveIndex(position.GetHash);
             if (tableResult < moves.GetSize())
                 moves.Swap(0, tableResult);
 
@@ -174,7 +174,7 @@ namespace ChessEngine.AI
 
                 if (evaluation <= alpha)
                 {
-                    TranspositionTable.Instance.AddEntry(position.Hash, currentDepth, bestMoveIndex);
+                    TranspositionTable.Instance.AddEntry(position.GetHash, currentDepth, bestMoveIndex);
                     return new Tuple<int, bool, Move>(alpha, gameWasFinishedOnBestMove, bestMove);
                 }
 
@@ -187,7 +187,7 @@ namespace ChessEngine.AI
                 }
             }
 
-            TranspositionTable.Instance.AddEntry(position.Hash, currentDepth, bestMoveIndex);
+            TranspositionTable.Instance.AddEntry(position.GetHash, currentDepth, bestMoveIndex);
             return new Tuple<int, bool, Move>(beta, gameWasFinishedOnBestMove, bestMove);
         }
 
@@ -203,12 +203,12 @@ namespace ChessEngine.AI
                 return new Tuple<int, bool, Move>(0, true, new Move());
 
             MoveList moves = LegalMoveGen.Generate(position, Side.White);
-            moves = MoveSorter.Sort(position.Pieces, moves);
+            moves = MoveSorter.SortOptimized(position.Pieces, moves);
             Move bestMove = null;
             byte bestMoveIndex = 0;
             bool gameWasFinishedOnBestMove = false;
 
-            byte tableResult = TranspositionTable.Instance.GetBestMoveIndex(position.Hash);
+            byte tableResult = TranspositionTable.Instance.GetBestMoveIndex(position.GetHash);
             if (tableResult < moves.GetSize())
                 moves.Swap(0, tableResult);
 
@@ -233,7 +233,7 @@ namespace ChessEngine.AI
 
                 if (evaluation >= beta)
                 {
-                    TranspositionTable.Instance.AddEntry(position.Hash, currentDepth, bestMoveIndex);
+                    TranspositionTable.Instance.AddEntry(position.GetHash, currentDepth, bestMoveIndex);
                     return new Tuple<int, bool, Move>(beta, gameWasFinishedOnBestMove, bestMove);
                 }
 
@@ -246,7 +246,7 @@ namespace ChessEngine.AI
                 }
             }
 
-            TranspositionTable.Instance.AddEntry(position.Hash, currentDepth, bestMoveIndex);
+            TranspositionTable.Instance.AddEntry(position.GetHash, currentDepth, bestMoveIndex);
             return new Tuple<int, bool, Move>(alpha, gameWasFinishedOnBestMove, bestMove);
         }
 
@@ -264,7 +264,7 @@ namespace ChessEngine.AI
                 beta = evaluation;
 
             MoveList moves = LegalMoveGen.Generate(position, Side.Black, true);
-            moves = MoveSorter.Sort(position.Pieces, moves);
+            moves = MoveSorter.SortOptimized(position.Pieces, moves);
 
             for (byte i = 0; i < moves.GetSize(); i++)
             {
@@ -297,7 +297,7 @@ namespace ChessEngine.AI
                 alpha = evaluation;
 
             MoveList moves = LegalMoveGen.Generate(position, Side.White, true);
-            moves = MoveSorter.Sort(position.Pieces, moves);
+            moves = MoveSorter.SortOptimized(position.Pieces, moves);
 
             for (byte i = 0; i < moves.GetSize(); i++)
             {

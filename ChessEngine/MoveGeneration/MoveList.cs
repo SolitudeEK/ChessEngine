@@ -21,7 +21,7 @@ namespace ChessEngine.MoveGeneration
 
         public void Push(Move move)
         {
-            if (_size < 220)
+            if (_size < 218)
             {
                 _moves[this._size] = move;
                 _size++;

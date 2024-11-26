@@ -5,6 +5,7 @@ namespace ChessEngine.AI
 {
     public static class MoveSorter
     {
+        [Obsolete("Use SortOptimized instead", true)]
         public static MoveList Sort(Pieces pieces, MoveList moves)
         {
             byte n = moves.GetSize();
@@ -64,6 +65,44 @@ namespace ChessEngine.AI
             }
 
             return evaluation;
+        }
+
+        public static MoveList SortOptimized(Pieces pieces, MoveList moves)
+        {
+            byte n = moves.GetSize();
+
+            int[] evaluations = new int[n];
+
+            for (byte i = 0; i < n; i++)
+            {
+                Move move = moves[i];
+                evaluations[i] = EvaluateMove(pieces, move);
+            }
+            SortMovesBasedOnEvaluation(moves, evaluations, n);
+
+            return moves;
+        }
+
+        private static void SortMovesBasedOnEvaluation(MoveList moves, int[] evaluations, byte n)
+        {
+            for (byte i = 1; i < n; i++)
+            {
+                Move currentMove = moves[i];
+                int currentEval = evaluations[i];
+                byte j = i;
+
+                while (j > 0 && evaluations[j - 1] < currentEval)
+                {
+                    evaluations[j] = evaluations[j - 1];
+
+                    moves.Swap(j, (byte)(j - 1));
+
+                    j--;
+                }
+
+                evaluations[j] = currentEval;
+                moves[j] = currentMove;
+            }
         }
     }
 }

@@ -13,7 +13,6 @@ for(int i =0; i < 70; i++)
     var m1 = await AI.GetBestMovePharallel(p1, Side.White, 12000);
 
     p1.Move(m1);
-
     var m2 = await AI.GetBestMove(p1, Side.Black, 12000);
 
     p1.Move(m2);

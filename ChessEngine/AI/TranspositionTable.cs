@@ -17,9 +17,7 @@ namespace ChessEngine.AI
             get
             {
                 if (_instance == null)
-                {
                     _instance = new TranspositionTable();
-                }
                 return _instance;
             }
         }
@@ -30,22 +28,16 @@ namespace ChessEngine.AI
             ulong hashValue = hash.Value;
 
             if (!_map.TryGetValue(hashValue, out var existingEntry))
-            {
                 _map[hashValue] = (depth, bestMoveIndex);
-            }
             else if (existingEntry.Depth < depth)
-            {
                 _map[hashValue] = (depth, bestMoveIndex);
-            }
             _mutex.ReleaseMutex();
         }
 
         public byte GetBestMoveIndex(ZobristHash hash)
         {
             if (_map.TryGetValue(hash.Value, out var entry))
-            {
                 return entry.BestMoveIndex;
-            }
             return Move.None;
         }
     }

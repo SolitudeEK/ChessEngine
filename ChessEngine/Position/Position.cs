@@ -141,7 +141,7 @@ namespace ChessEngine.Position
         private bool BlackToMove
             => _moveCounter - Math.Floor(_moveCounter) > 0.0001;
 
-        public ZobristHash Hash => _hash;
+        public ZobristHash GetHash => _hash;
 
         public bool FiftyMovesRuleDraw => _fiftyMovesCounter == 50;
 
