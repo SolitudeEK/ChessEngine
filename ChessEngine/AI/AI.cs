@@ -24,7 +24,6 @@ namespace ChessEngine.AI
             for (int i = 1; i < 1000; i++)
             {
                 var task = Task.Run(() => AlphaBeta(position, side, i));
-
                 bool continueSearch = true;
                 while (!task.IsCompleted)
                 {
@@ -51,7 +50,7 @@ namespace ChessEngine.AI
                     break;
                 }
 
-                Console.WriteLine($"Base depth: {i,4}. Evaluation: {(float)eval / 100.0f,6} pawns. Time: {(DateTime.Now.Ticks - start) / 10000,10} ms.");
+                Console.WriteLine($"Base depth: {i,2}. Evaluation: {(float)eval / 100.0f,6} pawns. Time: {(DateTime.Now.Ticks - start) / 10000,10} ms.");
                 if (gameWasFinished)
                     break;
             }
@@ -59,6 +58,74 @@ namespace ChessEngine.AI
             Console.WriteLine("Search finished");
             Console.WriteLine(move.ToString());
             return move;
+        }
+
+        public static Task<Move> GetBestMovePharallel(Position.Position position, Side side, int ms)
+        {
+            Console.WriteLine(position);
+            StaticEvaluator.Evaluate(position.Pieces, true);
+
+            long start = DateTime.Now.Ticks;
+
+            Console.WriteLine("Parallel search started.");
+            
+            using CancellationTokenSource cts = new CancellationTokenSource();
+            cts.CancelAfter(ms);
+            CancellationToken token = cts.Token;
+            interrupter.Resume();
+            token.Register(() => interrupter.Interrupt());
+
+            int eval = 0;
+            int currentDepth = 0;
+            Move bestMove = new Move();
+            bool gameWasFinished = false;
+
+            try
+            {
+                ParallelOptions parallelOptions = new ParallelOptions
+                {
+                    CancellationToken = token,
+                    MaxDegreeOfParallelism = Environment.ProcessorCount
+                };
+
+                Parallel.For(1, 10, parallelOptions, depth =>
+                {
+                    try
+                    {
+                        //Console.WriteLine($"Task started for depth {depth}");
+                        var result = AlphaBeta(position, side, depth);
+                        lock (cts)
+                        {
+                            if (currentDepth < depth && !token.IsCancellationRequested)
+                            {
+                                currentDepth = depth;
+                                eval = result.Item1;
+                                gameWasFinished = result.Item2;
+                                bestMove = result.Item3;
+                                Console.WriteLine($"Base depth: {depth,2}. Evaluation: {(float)eval / 100.0f,6} pawns. Time: {(DateTime.Now.Ticks - start) / 10000,10} ms.");
+                            }
+                            if(gameWasFinished)
+                                cts.Cancel();
+                        }
+                        
+                    }
+                    catch (OperationCanceledException)
+                    {
+                        Console.WriteLine($"Task for depth {depth} canceled.");
+                    }
+                });
+            }
+            catch (OperationCanceledException)
+            {
+                Console.WriteLine("Search interrupted due to time limit.");
+            }
+            finally
+            {
+                cts.Dispose();
+            }
+
+            Console.WriteLine("Parallel search finished.");
+            return Task<Move>.FromResult(bestMove);
         }
 
         private static Tuple<int, bool, Move> AlphaBeta(in Position.Position position, Side side, int depthLeft)

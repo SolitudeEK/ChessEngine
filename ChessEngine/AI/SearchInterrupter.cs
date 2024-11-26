@@ -1,10 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-
-namespace ChessEngine.AI
+﻿namespace ChessEngine.AI
 {
     public class SearchInterrupter
     {
@@ -29,14 +23,10 @@ namespace ChessEngine.AI
         }
 
         public void Interrupt()
-        {
-            _halt = true;
-        }
+            => _halt = true;
 
         public void Resume()
-        {
-            _halt = false;
-        }
+            => _halt = false;
 
         public bool Interrupted => _halt;
     }

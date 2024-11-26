@@ -7,6 +7,7 @@ namespace ChessEngine.AI
     {
         private static TranspositionTable _instance;
         private readonly Dictionary<ulong, (int Depth, byte BestMoveIndex)> _map;
+        private Mutex _mutex = new Mutex();
 
         private TranspositionTable()
             => _map = new Dictionary<ulong, (int, byte)>();
@@ -25,6 +26,7 @@ namespace ChessEngine.AI
 
         public void AddEntry(ZobristHash hash, int depth, byte bestMoveIndex)
         {
+            _mutex.WaitOne();
             ulong hashValue = hash.Value;
 
             if (!_map.TryGetValue(hashValue, out var existingEntry))
@@ -35,6 +37,7 @@ namespace ChessEngine.AI
             {
                 _map[hashValue] = (depth, bestMoveIndex);
             }
+            _mutex.ReleaseMutex();
         }
 
         public byte GetBestMoveIndex(ZobristHash hash)
