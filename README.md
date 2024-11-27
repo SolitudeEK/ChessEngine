@@ -41,7 +41,7 @@ This repository contains a robust chess engine designed for high-performance mov
 
 3. **Create a Board Position**
 	```csharp
-	string shortFen = rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR"
+	string shortFen = "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR"
 	Position position = new Position(shortFen, enPassantIndex, wlCastling, wsCastling, blCastling, bsCastling, moveCounter);
 	```
 

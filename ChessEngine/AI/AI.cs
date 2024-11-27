@@ -5,17 +5,16 @@ namespace ChessEngine.AI
 {
     public static class AI
     {
-        private static readonly SearchInterrupter interrupter = SearchInterrupter.Instance;
-
         public static async Task<Move> GetBestMove(Position.Position position, Side side, int ms)
         {
             Console.WriteLine(position);
             StaticEvaluator.Evaluate(position.Pieces, true);
 
             long start = DateTime.Now.Ticks;
-            interrupter.Resume();
-
             Console.WriteLine("Search started.");
+            CancellationTokenSource cts = new CancellationTokenSource();
+            cts.CancelAfter(ms);
+            var token = cts.Token;
 
             int eval = 0;
             bool gameWasFinished = false;
@@ -23,37 +22,25 @@ namespace ChessEngine.AI
 
             for (int i = 1; i < 1000; i++)
             {
-                var task = Task.Run(() => AlphaBeta(position, side, i));
-                bool continueSearch = true;
-                while (!task.IsCompleted)
-                {
-                    if ((DateTime.Now.Ticks - start) / 10000 >= ms)
-                    {
-                        continueSearch = false;
-                        break;
-                    }
+                var task = Task.Run(() => AlphaBeta(position, side, i, token));
 
-                    await Task.Delay(20);
-                }
+                var result = await task;
 
-                if (continueSearch || i == 1)
+                if (!token.IsCancellationRequested)
                 {
-                    var result = await task;
                     eval = result.Item1;
                     gameWasFinished = result.Item2;
                     move = result.Item3;
+                    Console.WriteLine($"Base depth: {i,2}. Evaluation: {(float)eval / 100.0f,6} pawns. Time: {(DateTime.Now.Ticks - start) / 10000,10} ms.");
                 }
                 else
-                {
-                    interrupter.Interrupt();
-                    var _ = await task;
                     break;
-                }
 
-                Console.WriteLine($"Base depth: {i,2}. Evaluation: {(float)eval / 100.0f,6} pawns. Time: {(DateTime.Now.Ticks - start) / 10000,10} ms.");
                 if (gameWasFinished)
                     break;
             }
+
+            cts.Dispose();
 
             Console.WriteLine("Search finished");
             Console.WriteLine(move.ToString());
@@ -72,8 +59,6 @@ namespace ChessEngine.AI
             using CancellationTokenSource cts = new CancellationTokenSource();
             cts.CancelAfter(ms);
             CancellationToken token = cts.Token;
-            interrupter.Resume();
-            token.Register(() => interrupter.Interrupt());
 
             int eval = 0;
             int currentDepth = 0;
@@ -92,8 +77,7 @@ namespace ChessEngine.AI
                 {
                     try
                     {
-                        //Console.WriteLine($"Task started for depth {depth}");
-                        var result = AlphaBeta(position, side, depth);
+                        var result = AlphaBeta(position, side, depth, token);
                         lock (cts)
                         {
                             if (currentDepth < depth && !token.IsCancellationRequested)
@@ -128,17 +112,17 @@ namespace ChessEngine.AI
             return Task<Move>.FromResult(bestMove);
         }
 
-        private static Tuple<int, bool, Move> AlphaBeta(in Position.Position position, Side side, int depthLeft)
-            => side == Side.White ? AlphaBetaMax(position, int.MinValue, int.MaxValue, depthLeft) :
-                                    AlphaBetaMin(position, int.MinValue, int.MaxValue, depthLeft);
+        private static Tuple<int, bool, Move> AlphaBeta(in Position.Position position, Side side, int depthLeft, CancellationToken token)
+            => side == Side.White ? AlphaBetaMax(position, int.MinValue, int.MaxValue, depthLeft, token) :
+                                    AlphaBetaMin(position, int.MinValue, int.MaxValue, depthLeft, token);
 
-        private static Tuple<int, bool, Move> AlphaBetaMin(in Position.Position position, int alpha, int beta, int depthLeft, int currentDepth = 0)
+        private static Tuple<int, bool, Move> AlphaBetaMin(in Position.Position position, int alpha, int beta, int depthLeft, CancellationToken token, int currentDepth = 0)
         {
-            if (SearchInterrupter.Instance.Interrupted)
+            if (token.IsCancellationRequested)
                 return new Tuple<int, bool, Move>(0, false, new Move());
 
             if (depthLeft == 0)
-                return new Tuple<int, bool, Move>(AlphaBetaMinOnlyCaptures(position, alpha, beta), false, new Move());
+                return new Tuple<int, bool, Move>(AlphaBetaMinOnlyCaptures(position, alpha, beta, token), false, new Move());
 
             if (position.FiftyMovesRuleDraw || position.ThreefoldRepetitionDraw)
                 return new Tuple<int, bool, Move>(0, true, new Move());
@@ -168,7 +152,7 @@ namespace ChessEngine.AI
 
                 Position.Position copy = position.Copy();
                 copy.Move(move);
-                var result = AlphaBetaMax(copy, alpha, beta, depthLeft - (check ? 0 : 1), currentDepth + 1);
+                var result = AlphaBetaMax(copy, alpha, beta, depthLeft - (check ? 0 : 1), token, currentDepth + 1);
                 int evaluation = result.Item1;
                 bool gameWasFinished = result.Item2;
 
@@ -191,13 +175,13 @@ namespace ChessEngine.AI
             return new Tuple<int, bool, Move>(beta, gameWasFinishedOnBestMove, bestMove);
         }
 
-        private static Tuple<int, bool, Move> AlphaBetaMax(in Position.Position position, int alpha, int beta, int depthLeft, int currentDepth = 0)
+        private static Tuple<int, bool, Move> AlphaBetaMax(in Position.Position position, int alpha, int beta, int depthLeft, CancellationToken token, int currentDepth = 0)
         {
-            if (SearchInterrupter.Instance.Interrupted)
+            if (token.IsCancellationRequested)
                 return new Tuple<int, bool, Move>(0, false, new Move());
 
             if (depthLeft == 0)
-                return new Tuple<int, bool, Move>(AlphaBetaMaxOnlyCaptures(position, alpha, beta), false, new Move());
+                return new Tuple<int, bool, Move>(AlphaBetaMaxOnlyCaptures(position, alpha, beta, token), false, new Move());
 
             if (position.FiftyMovesRuleDraw || position.ThreefoldRepetitionDraw)
                 return new Tuple<int, bool, Move>(0, true, new Move());
@@ -227,7 +211,7 @@ namespace ChessEngine.AI
 
                 Position.Position copy = position.Copy();
                 copy.Move(move);
-                var result = AlphaBetaMin(copy, alpha, beta, depthLeft - (check ? 0 : 1), currentDepth + 1);
+                var result = AlphaBetaMin(copy, alpha, beta, depthLeft - (check ? 0 : 1), token, currentDepth + 1);
                 int evaluation = result.Item1;
                 bool gameWasFinished = result.Item2;
 
@@ -250,9 +234,9 @@ namespace ChessEngine.AI
             return new Tuple<int, bool, Move>(alpha, gameWasFinishedOnBestMove, bestMove);
         }
 
-        private static int AlphaBetaMinOnlyCaptures(in Position.Position position, int alpha, int beta)
+        private static int AlphaBetaMinOnlyCaptures(in Position.Position position, int alpha, int beta, CancellationToken token)
         {
-            if(SearchInterrupter.Instance.Interrupted)
+            if(token.IsCancellationRequested)
                 return 0;
 
             int evaluation = StaticEvaluator.Evaluate(position.Pieces);
@@ -272,7 +256,7 @@ namespace ChessEngine.AI
 
                 Position.Position copy = position.Copy();
                 copy.Move(move);
-                evaluation = AlphaBetaMaxOnlyCaptures(copy, alpha, beta);
+                evaluation = AlphaBetaMaxOnlyCaptures(copy, alpha, beta, token);
 
                 if(evaluation <= alpha)
                     return alpha;
@@ -283,9 +267,9 @@ namespace ChessEngine.AI
             return beta;
         }
 
-        private static int AlphaBetaMaxOnlyCaptures(in Position.Position position, int alpha, int beta)
+        private static int AlphaBetaMaxOnlyCaptures(in Position.Position position, int alpha, int beta, CancellationToken token)
         {
-            if (SearchInterrupter.Instance.Interrupted)
+            if (token.IsCancellationRequested)
                 return 0;
 
             int evaluation = StaticEvaluator.Evaluate(position.Pieces);
@@ -305,7 +289,7 @@ namespace ChessEngine.AI
 
                 Position.Position copy = position.Copy();
                 copy.Move(move);
-                evaluation = AlphaBetaMaxOnlyCaptures(copy, alpha, beta);
+                evaluation = AlphaBetaMaxOnlyCaptures(copy, alpha, beta, token);
 
                 if (evaluation >= beta)
                     return beta;
