@@ -1,6 +1,7 @@
 ﻿namespace ChessEngine.Position
 {
     using System.Numerics;
+    using System.Runtime.CompilerServices;
 
     public static class BOp
     {
@@ -15,19 +16,23 @@
             13, 18,  8, 12,  7,  6,  5, 63
         };
 
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static ulong Set1(ulong bb, byte square)
             => bb | (1UL << square);
 
-
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static ulong Set0(ulong bb, byte square)
             => bb & ~(1UL << square);
 
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static bool GetBit(ulong bb, byte square)
             => (bb & (1UL << square)) != 0;
 
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static int Count1(ulong bb)
             => BitOperations.PopCount(bb);
 
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static byte Bsf(ulong bb)
             => BitScanTable[((bb ^ (bb - 1)) * 0x03f79d71b4cb0a89UL) >> 58];
 

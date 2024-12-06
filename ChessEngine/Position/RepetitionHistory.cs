@@ -2,15 +2,20 @@
 {
     public class RepetitionHistory
     {
-        private List<ulong> _hashes = new List<ulong>();
+        private Dictionary<ulong, int> _hashCounts = new Dictionary<ulong, int>();
 
         public void AddPosition(ulong hash)
-            => _hashes.Add(hash);
+        {
+            if (_hashCounts.ContainsKey(hash))
+                _hashCounts[hash]++;
+            else
+                _hashCounts[hash] = 1;
+        }
 
         public void Clear()
-            => _hashes.Clear();
+            => _hashCounts.Clear();
 
         public byte GetRepetitionNumber(ulong hash)
-            => (byte) _hashes.Count(h => h == hash);
+            => _hashCounts.TryGetValue(hash, out int count) ? (byte)count : (byte)0;
     }
 }

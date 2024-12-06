@@ -95,7 +95,7 @@ namespace ChessEngine.MoveGeneration
             return bishopMask | rookMask;
         }
 
-        public static bool InDanger(Pieces pieces, byte p, Side side) // Not sure if it works corerctly
+        public static bool InDanger(Pieces pieces, byte p, Side side)
         {
             ulong oppositePawnsLeftCaptures = GeneratePawnsLeftCapturesMask(pieces, (byte)Pieces.Inverse(side), true);
             ulong oppositePawnsRightCaptures = GeneratePawnsRightCapturesMask(pieces, (byte)Pieces.Inverse(side), true);
@@ -121,14 +121,9 @@ namespace ChessEngine.MoveGeneration
         private static ulong CalcRay(Pieces pieces, byte p, byte side, bool onlyCaptures, SlidersMasks.Direction direction, bool bsr) 
         {
             ulong blockers = SlidersMasks.Masks[p,(byte)direction] & pieces.GetAllBitboard();
+
             if (blockers == 0)
-            {
-                if (onlyCaptures)
-                {
-                    return 0;
-                }
-                return SlidersMasks.Masks[p, (byte)direction];
-            }
+                return onlyCaptures ? 0 : SlidersMasks.Masks[p, (byte)direction];
 
             byte blockingSquare;
             if (bsr)
