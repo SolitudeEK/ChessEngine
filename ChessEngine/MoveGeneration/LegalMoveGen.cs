@@ -166,7 +166,7 @@ namespace ChessEngine.MoveGeneration
             }
         }
 
-        private static bool IsLegal(Pieces pieces, Move move)
+        public static bool IsLegal(Pieces pieces, Move move)
         {
             pieces.SetPieceBitboard((byte)move.AttackerSide, (byte)move.AttackerType, BOp.Set0(pieces.GetPieceBitboard((byte)move.AttackerSide, (byte)move.AttackerType), move.From));
             pieces.SetPieceBitboard((byte)move.AttackerSide, (byte)move.AttackerType, BOp.Set1(pieces.GetPieceBitboard((byte)move.AttackerSide, (byte)move.AttackerType), move.To));
